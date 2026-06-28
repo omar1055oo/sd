@@ -13,7 +13,7 @@ interface SessionTimerProps {
 }
 
 export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: SessionTimerProps) {
-  const { setMyActiveSession } = useAppData();
+  const { setMyActiveSession, broadcastMessage } = useAppData();
   const { showToast } = useToast();
   const [durationMinutes, setDurationMinutes] = useState(25);
   const [isRunning, setIsRunning] = useState(false);
@@ -111,7 +111,7 @@ export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: Sessio
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative"
+        className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl relative border border-gray-100 dark:border-gray-700"
       >
         <button 
           onClick={onCancel}
@@ -121,18 +121,18 @@ export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: Sessio
         </button>
 
         <div className="flex flex-col items-center text-center pt-2">
-          <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
+          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-4">
             <Timer className="w-6 h-6" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-1">Study Session</h3>
-          <p className="text-gray-500 text-sm mb-6 max-w-[250px] truncate" title={goalTitle}>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Study Session</h3>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 max-w-[250px] truncate" title={goalTitle}>
             {goalTitle}
           </p>
 
           {!isRunning && !isFinished ? (
             <div className="w-full space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Duration (Minutes)
                 </label>
                 <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
@@ -142,8 +142,8 @@ export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: Sessio
                       onClick={() => setDurationMinutes(mins)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         durationMinutes === mins 
-                          ? 'bg-blue-600 text-white shadow-sm' 
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-blue-600 dark:bg-blue-600 text-white shadow-sm' 
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
                       {mins}
@@ -151,16 +151,16 @@ export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: Sessio
                   ))}
                 </div>
                 <div className="flex items-center justify-center gap-2">
-                  <span className="text-sm text-gray-500">Custom:</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Custom:</span>
                   <input
                     type="number"
                     min="1"
                     max="180"
                     value={durationMinutes}
                     onChange={(e) => setDurationMinutes(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-20 px-3 py-1.5 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    className="w-20 px-3 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg text-center focus:ring-2 focus:ring-blue-500 outline-none"
                   />
-                  <span className="text-sm text-gray-500">mins</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">mins</span>
                 </div>
               </div>
               
@@ -174,14 +174,14 @@ export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: Sessio
             </div>
           ) : isFinished ? (
             <div className="w-full space-y-4">
-              <div className="text-4xl font-mono font-bold text-gray-900 mb-4">
+              <div className="text-4xl font-mono font-bold text-gray-900 dark:text-white mb-4">
                 00:00
               </div>
-              <p className="text-gray-800 font-medium mb-4">Time's up! Did you complete this goal?</p>
+              <p className="text-gray-800 dark:text-gray-200 font-medium mb-4">Time's up! Did you complete this goal?</p>
               <div className="flex gap-3">
                 <button
                   onClick={() => { handleStop(); onCancel(); }}
-                  className="flex-1 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
+                  className="flex-1 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 >
                   Not Yet
                 </button>
@@ -205,7 +205,7 @@ export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: Sessio
                     stroke="currentColor"
                     strokeWidth="8"
                     fill="transparent"
-                    className="text-gray-100"
+                    className="text-gray-100 dark:text-gray-700"
                   />
                   <circle
                     cx="96"
@@ -222,7 +222,7 @@ export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: Sessio
                     strokeLinecap="round"
                   />
                 </svg>
-                <div className="absolute text-4xl font-mono font-bold text-gray-900">
+                <div className="absolute text-4xl font-mono font-bold text-gray-900 dark:text-white">
                   {formatTime(timeLeft)}
                 </div>
               </div>
@@ -230,7 +230,7 @@ export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: Sessio
               <div className="flex gap-3">
                 <button
                   onClick={handleStop}
-                  className="flex-1 py-3 bg-red-50 text-red-600 font-semibold rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2 text-sm"
+                  className="flex-1 py-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-semibold rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors flex items-center justify-center gap-2 text-sm"
                 >
                   <Square className="w-4 h-4" fill="currentColor" />
                   Stop
@@ -241,7 +241,7 @@ export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: Sessio
                     const { data: { user: currentUser } } = await supabase.auth.getUser();
                     if (!currentUser) return;
                     
-                    const { error } = await supabase.from('messages').insert({
+                    const { data, error } = await supabase.from('messages').insert({
                       user_id: currentUser.id,
                       content: `I'm studying "${goalTitle}" for ${durationMinutes} mins. Join me!`,
                       type: 'session_invite',
@@ -250,15 +250,16 @@ export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: Sessio
                         title: goalTitle,
                         duration_minutes: durationMinutes
                       }
-                    });
+                    }).select().single();
 
-                    if (!error) {
+                    if (!error && data) {
                       showToast('Session invite shared to chat!');
+                      broadcastMessage(data);
                     } else {
                       showToast('Failed to share invite', 'error');
                     }
                   }}
-                  className="flex-1 py-3 bg-blue-50 text-blue-600 font-semibold rounded-xl hover:bg-blue-100 transition-colors flex items-center justify-center gap-2 text-sm"
+                  className="flex-1 py-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors flex items-center justify-center gap-2 text-sm"
                   title="Share Invite to Chat"
                 >
                   <Timer className="w-4 h-4" />

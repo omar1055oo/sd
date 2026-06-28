@@ -13,3 +13,12 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Messages are viewable by everyone" ON messages FOR SELECT USING (true);
 CREATE POLICY "Users can insert own messages" ON messages FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Enable real-time replication for the messages table
+begin;
+  -- remove the supabase_realtime publication
+  drop publication if exists supabase_realtime;
+  -- re-create it
+  create publication supabase_realtime;
+commit;
+alter publication supabase_realtime add table messages;

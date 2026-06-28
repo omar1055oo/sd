@@ -21,6 +21,9 @@ interface AppDataContextType {
   onlineUsers: string[];
   activeSessions: Record<string, ActiveSession>;
   setMyActiveSession: (session: ActiveSession | null) => Promise<void>;
+  broadcastMessage: (message: Database['public']['Tables']['messages']['Row']) => void;
+  onNewMessage: ((message: Database['public']['Tables']['messages']['Row']) => void) | null;
+  setOnNewMessage: (cb: ((message: Database['public']['Tables']['messages']['Row']) => void) | null) => void;
 }
 
 const AppDataContext = createContext<AppDataContextType>({
@@ -31,6 +34,9 @@ const AppDataContext = createContext<AppDataContextType>({
   onlineUsers: [],
   activeSessions: {},
   setMyActiveSession: async () => {},
+  broadcastMessage: () => {},
+  onNewMessage: null,
+  setOnNewMessage: () => {},
 });
 
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
@@ -42,6 +48,13 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [activeSessions, setActiveSessions] = useState<Record<string, ActiveSession>>({});
   const [presenceChannel, setPresenceChannel] = useState<RealtimeChannel | null>(null);
+  const [onNewMessage, setOnNewMessage] = useState<((message: Database['public']['Tables']['messages']['Row']) => void) | null>(null);
+
+  // We need a stable ref for the callback so the channel subscription doesn't get stale
+  const onNewMessageRef = React.useRef(onNewMessage);
+  useEffect(() => {
+    onNewMessageRef.current = onNewMessage;
+  }, [onNewMessage]);
 
   const fetchData = async () => {
     if (!user) return;
@@ -75,7 +88,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'goals' }, () => fetchData())
       .subscribe();
 
-    // Presence channel
+    // Presence & Broadcast channel
     const pChannel = supabase.channel('online-users', {
       config: { presence: { key: user.id } },
     });
@@ -87,7 +100,6 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       
       for (const id in state) {
         online.push(id);
-        // Take the most recent presence state for this user
         const userState = state[id][0] as any; 
         if (userState?.active_session) {
           sessions[id] = userState.active_session;
@@ -95,6 +107,12 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       }
       setOnlineUsers(online);
       setActiveSessions(sessions);
+    });
+
+    pChannel.on('broadcast', { event: 'new_message' }, (payload) => {
+      if (onNewMessageRef.current) {
+        onNewMessageRef.current(payload.payload);
+      }
     });
 
     pChannel.subscribe(async (status) => {
@@ -132,6 +150,16 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const broadcastMessage = (message: Database['public']['Tables']['messages']['Row']) => {
+    if (presenceChannel) {
+      presenceChannel.send({
+        type: 'broadcast',
+        event: 'new_message',
+        payload: message
+      });
+    }
+  };
+
   return (
     <AppDataContext.Provider value={{ 
       profiles, 
@@ -140,7 +168,10 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       refreshData: fetchData,
       onlineUsers,
       activeSessions,
-      setMyActiveSession
+      setMyActiveSession,
+      broadcastMessage,
+      onNewMessage,
+      setOnNewMessage
     }}>
       {children}
     </AppDataContext.Provider>

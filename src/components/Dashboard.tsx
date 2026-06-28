@@ -5,21 +5,22 @@ import { CreateGoal } from './CreateGoal';
 import { GoalList } from './GoalList';
 import { History } from './History';
 import { Chat } from './Chat';
-import { LogOut, LayoutDashboard, History as HistoryIcon, MessageCircle } from 'lucide-react';
+import { Settings } from './Settings';
+import { LogOut, LayoutDashboard, History as HistoryIcon, MessageCircle, Settings as SettingsIcon } from 'lucide-react';
 
-type Tab = 'dashboard' | 'history' | 'chat';
+type Tab = 'dashboard' | 'history' | 'chat' | 'settings';
 
 export function Dashboard() {
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 transition-colors">
+      <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10 transition-colors">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-8">
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">Versus</h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Versus</h1>
               <div className="hidden sm:flex space-x-1">
                 <button
                   onClick={() => setActiveTab('dashboard')}
@@ -48,6 +49,15 @@ export function Dashboard() {
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Chat
                 </button>
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className={`px-3 py-2 rounded-md text-sm font-medium flex items-center ${
+                    activeTab === 'settings' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <SettingsIcon className="w-4 h-4 mr-2" />
+                  Settings
+                </button>
               </div>
             </div>
             <div className="flex items-center">
@@ -65,33 +75,42 @@ export function Dashboard() {
       </nav>
 
       {/* Mobile nav */}
-      <div className="sm:hidden bg-white border-b border-gray-200 px-4 py-2 flex space-x-2 overflow-x-auto">
+      <div className="sm:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex space-x-2 overflow-x-auto transition-colors">
         <button
           onClick={() => setActiveTab('dashboard')}
           className={`px-3 py-2 rounded-md text-sm font-medium flex-1 flex justify-center items-center ${
-            activeTab === 'dashboard' ? 'bg-blue-50 text-blue-700' : 'text-gray-600'
+            activeTab === 'dashboard' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'
           }`}
         >
           <LayoutDashboard className="w-4 h-4 mr-2" />
-          Dashboard
+          <span className="hidden sm:inline">Dashboard</span>
         </button>
         <button
           onClick={() => setActiveTab('history')}
           className={`px-3 py-2 rounded-md text-sm font-medium flex-1 flex justify-center items-center ${
-            activeTab === 'history' ? 'bg-blue-50 text-blue-700' : 'text-gray-600'
+            activeTab === 'history' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'
           }`}
         >
           <HistoryIcon className="w-4 h-4 mr-2" />
-          History
+          <span className="hidden sm:inline">History</span>
         </button>
         <button
           onClick={() => setActiveTab('chat')}
           className={`px-3 py-2 rounded-md text-sm font-medium flex-1 flex justify-center items-center ${
-            activeTab === 'chat' ? 'bg-blue-50 text-blue-700' : 'text-gray-600'
+            activeTab === 'chat' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'
           }`}
         >
           <MessageCircle className="w-4 h-4 mr-2" />
-          Chat
+          <span className="hidden sm:inline">Chat</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('settings')}
+          className={`px-3 py-2 rounded-md text-sm font-medium flex-1 flex justify-center items-center ${
+            activeTab === 'settings' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'
+          }`}
+        >
+          <SettingsIcon className="w-4 h-4 mr-2" />
+          <span className="hidden sm:inline">Settings</span>
         </button>
       </div>
 
@@ -110,6 +129,8 @@ export function Dashboard() {
           </div>
         ) : activeTab === 'history' ? (
           <History />
+        ) : activeTab === 'settings' ? (
+          <Settings />
         ) : (
           <Chat />
         )}

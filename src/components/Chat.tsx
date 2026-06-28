@@ -10,7 +10,7 @@ type Message = Database['public']['Tables']['messages']['Row'];
 
 export function Chat() {
   const { user } = useAuth();
-  const { profiles, goals } = useAppData();
+  const { profiles, goals, setOnNewMessage, broadcastMessage } = useAppData();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -20,6 +20,15 @@ export function Chat() {
   useEffect(() => {
     fetchMessages();
 
+    // Set the callback for new broadcasted messages
+    setOnNewMessage((newMsg) => {
+      setMessages(prev => {
+        if (prev.some(m => m.id === newMsg.id)) return prev;
+        return [...prev, newMsg];
+      });
+    });
+
+    // Fallback: Postgres replication if enabled
     const channel = supabase
       .channel('public:messages')
       .on(
@@ -28,10 +37,7 @@ export function Chat() {
         (payload) => {
           setMessages(prev => {
             const newMsg = payload.new as Message;
-            // Prevent duplicates if already added via optimistic update
-            if (prev.some(m => m.id === newMsg.id)) {
-              return prev;
-            }
+            if (prev.some(m => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
         }
@@ -39,9 +45,10 @@ export function Chat() {
       .subscribe();
 
     return () => {
+      setOnNewMessage(null);
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [setOnNewMessage]);
 
   useEffect(() => {
     scrollToBottom();
@@ -109,6 +116,9 @@ export function Chat() {
       
       // Update with the actual data from server
       setMessages(prev => prev.map(m => m.id === tempId ? data : m));
+
+      // Broadcast to other clients immediately
+      broadcastMessage(data);
     } catch (err) {
       console.error('Error sending message:', err);
     }
@@ -169,17 +179,17 @@ export function Chat() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[600px] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 h-[600px] flex items-center justify-center transition-colors">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-12rem)] min-h-[500px]">
-      <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white rounded-t-2xl">
-        <h2 className="text-lg font-semibold text-gray-900">Rivals Chat</h2>
-        <span className="text-xs font-medium px-2 py-1 bg-green-50 text-green-600 rounded-full">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col h-[calc(100vh-12rem)] min-h-[500px] transition-colors overflow-hidden">
+      <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-white dark:bg-gray-800">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Rivals Chat</h2>
+        <span className="text-xs font-medium px-2 py-1 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full">
           {profiles.length} Participants
         </span>
       </div>
@@ -187,14 +197,14 @@ export function Chat() {
       {error ? (
         <div className="flex-1 p-6 flex flex-col items-center justify-center text-center">
           <AlertCircle className="w-12 h-12 text-amber-500 mb-4" />
-          <p className="text-gray-800 font-medium mb-2">Setup Required</p>
-          <p className="text-gray-500 text-sm max-w-sm">{error}</p>
+          <p className="text-gray-800 dark:text-gray-200 font-medium mb-2">Setup Required</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm">{error}</p>
         </div>
       ) : (
         <>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/50">
             {messages.length === 0 ? (
-              <div className="text-center text-gray-400 mt-10">
+              <div className="text-center text-gray-400 dark:text-gray-500 mt-10">
                 <p>No messages yet. Say hello!</p>
               </div>
             ) : (
@@ -205,20 +215,20 @@ export function Chat() {
                 return (
                   <div key={message.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                     {!isMe && (
-                      <span className="text-xs text-gray-500 ml-1 mb-1">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 ml-1 mb-1">
                         {profile?.display_name || profile?.email}
                       </span>
                     )}
                     <div 
                       className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                         isMe 
-                          ? 'bg-blue-600 text-white rounded-br-none' 
-                          : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
+                          ? 'bg-blue-600 dark:bg-blue-600 text-white rounded-br-none' 
+                          : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white rounded-bl-none shadow-sm'
                       }`}
                     >
                       {renderMessageContent(message)}
                     </div>
-                    <span className="text-[10px] text-gray-400 mt-1 mx-1">
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 mx-1">
                       {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                     </span>
                   </div>
@@ -228,14 +238,14 @@ export function Chat() {
             <div ref={messagesEndRef} />
           </div>
 
-          <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-100 bg-white rounded-b-2xl">
+          <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type a message..."
-                className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                className="flex-1 px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none placeholder-gray-400 dark:placeholder-gray-500"
               />
               <button
                 type="submit"
