@@ -1,0 +1,6 @@
+{
+  "name": "Versus: Gamified Goal Tracker",
+  "description": "A competitive, real-time gamified goal tracker using React and Supabase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
