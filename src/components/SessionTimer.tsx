@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Play, Square, Check, X, Timer } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppData } from '../contexts/AppDataContext';
+import { useToast } from '../contexts/ToastContext';
 import { formatDistanceToNow } from 'date-fns';
 
 interface SessionTimerProps {
@@ -13,6 +14,7 @@ interface SessionTimerProps {
 
 export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: SessionTimerProps) {
   const { setMyActiveSession } = useAppData();
+  const { showToast } = useToast();
   const [durationMinutes, setDurationMinutes] = useState(25);
   const [isRunning, setIsRunning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -239,7 +241,7 @@ export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: Sessio
                     const { data: { user: currentUser } } = await supabase.auth.getUser();
                     if (!currentUser) return;
                     
-                    await supabase.from('messages').insert({
+                    const { error } = await supabase.from('messages').insert({
                       user_id: currentUser.id,
                       content: `I'm studying "${goalTitle}" for ${durationMinutes} mins. Join me!`,
                       type: 'session_invite',
@@ -249,6 +251,12 @@ export function SessionTimer({ goalId, goalTitle, onComplete, onCancel }: Sessio
                         duration_minutes: durationMinutes
                       }
                     });
+
+                    if (!error) {
+                      showToast('Session invite shared to chat!');
+                    } else {
+                      showToast('Failed to share invite', 'error');
+                    }
                   }}
                   className="flex-1 py-3 bg-blue-50 text-blue-600 font-semibold rounded-xl hover:bg-blue-100 transition-colors flex items-center justify-center gap-2 text-sm"
                   title="Share Invite to Chat"

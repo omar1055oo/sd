@@ -26,7 +26,14 @@ export function Chat() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload) => {
-          setMessages(prev => [...prev, payload.new as Message]);
+          setMessages(prev => {
+            const newMsg = payload.new as Message;
+            // Prevent duplicates if already added via optimistic update
+            if (prev.some(m => m.id === newMsg.id)) {
+              return prev;
+            }
+            return [...prev, newMsg];
+          });
         }
       )
       .subscribe();
@@ -74,15 +81,34 @@ export function Chat() {
     setNewMessage('');
 
     try {
-      const { error } = await supabase
+      // Optimistic update using a temporary ID
+      const tempId = crypto.randomUUID();
+      const tempMessage: Message = {
+        id: tempId,
+        user_id: user.id,
+        content,
+        type: 'text',
+        metadata: null,
+        created_at: new Date().toISOString()
+      };
+      
+      setMessages(prev => [...prev, tempMessage]);
+      scrollToBottom();
+
+      const { data, error } = await supabase
         .from('messages')
         .insert({
           user_id: user.id,
           content,
           type: 'text'
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+      
+      // Update with the actual data from server
+      setMessages(prev => prev.map(m => m.id === tempId ? data : m));
     } catch (err) {
       console.error('Error sending message:', err);
     }

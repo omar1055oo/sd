@@ -8,6 +8,8 @@ import { AppDataProvider } from './contexts/AppDataContext';
 import { Auth } from './components/Auth';
 import { Dashboard } from './components/Dashboard';
 
+import { ToastProvider } from './contexts/ToastContext';
+
 function AppContent() {
   const { user, loading } = useAuth();
 
@@ -32,8 +34,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ToastProvider>
   );
 }

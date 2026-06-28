@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppData } from '../contexts/AppDataContext';
+import { useToast } from '../contexts/ToastContext';
 import { format, isThisWeek, isThisMonth } from 'date-fns';
 import { CheckCircle2 } from 'lucide-react';
 import { CATEGORY_LABELS, GoalCategory } from '../lib/points';
@@ -8,6 +9,7 @@ type FilterType = 'all' | 'week' | 'month';
 
 export function History() {
   const { goals, profiles } = useAppData();
+  const { showToast } = useToast();
   const [filter, setFilter] = useState<FilterType>('all');
 
   const completedGoals = goals.filter(g => g.status === 'completed' && g.completed_at);
@@ -79,7 +81,7 @@ export function History() {
                         const { data: { user: currentUser } } = await supabase.auth.getUser();
                         if (!currentUser) return;
                         
-                        await supabase.from('messages').insert({
+                        const { error } = await supabase.from('messages').insert({
                           user_id: currentUser.id,
                           content: `I completed "${goal.title}" and earned ${goal.total_points} points!`,
                           type: 'achievement',
@@ -89,6 +91,12 @@ export function History() {
                             points: goal.total_points
                           }
                         });
+
+                        if (!error) {
+                          showToast('Achievement shared to chat!');
+                        } else {
+                          showToast('Failed to share achievement', 'error');
+                        }
                       }}
                       className="text-xs text-blue-600 hover:text-blue-800 font-medium opacity-0 group-hover:opacity-100 transition-opacity"
                     >

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAppData } from '../contexts/AppDataContext';
+import { useToast } from '../contexts/ToastContext';
 import { CheckCircle2, Circle, Clock, Edit2, Trash2, X, Save, AlertTriangle, Play } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '../lib/supabase';
@@ -11,6 +12,7 @@ import { SessionTimer } from './SessionTimer';
 export function GoalList() {
   const { user } = useAuth();
   const { goals, profiles, refreshData, activeSessions, onlineUsers } = useAppData();
+  const { showToast } = useToast();
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
   
   // Timer state
@@ -229,7 +231,7 @@ export function GoalList() {
                             const { data: { user: currentUser } } = await supabase.auth.getUser();
                             if (!currentUser) return;
                             
-                            await supabase.from('messages').insert({
+                            const { error } = await supabase.from('messages').insert({
                               user_id: currentUser.id,
                               content: `I'm working on "${goal.title}".`,
                               type: 'goal_share',
@@ -238,6 +240,12 @@ export function GoalList() {
                                 title: goal.title
                               }
                             });
+                            
+                            if (!error) {
+                              showToast('Goal shared to chat successfully!');
+                            } else {
+                              showToast('Failed to share goal', 'error');
+                            }
                           }}
                           className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                           title="Share to Chat"
